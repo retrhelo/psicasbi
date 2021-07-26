@@ -1,7 +1,7 @@
 /* a linker script for riscv64 */
 
 OUTPUT_ARCH(riscv)
-ENTRY(_start)
+ENTRY(_entry)
 BASE_ADDRESS = 0x80000000;
 
 MEMORY {
@@ -14,8 +14,8 @@ SECTIONS
 	skernel = .;
 
 	stext = .;
-	.text : {
-		*(.text.entry)
+	.text : ALIGN(4K) {
+		*(.text.init)
 		*(.text .text.*)
 	} > sbi_space
 
@@ -35,7 +35,8 @@ SECTIONS
 
 	edata = .;
 	.bss : ALIGN(4K) {
-		*(.bss.uninit)
+		*(.bss.heap)
+		*(.bss.stack)
 		sbss = .;
 		*(.bss .bss.*)
 		*(.sbss .sbss.*)
