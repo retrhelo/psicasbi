@@ -7,7 +7,7 @@ edition = "2018"
 
 [dependencies]
 lazy_static = { version = "1", features = ["spin_no_std"] }
-spin = "0.9.0"
+spin = { version = "0.9.0", features = ["mutex", "spin_mutex"] }
 riscv = "0.6.0"
 buddy_system_allocator = "0.8"
 

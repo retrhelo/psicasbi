@@ -93,10 +93,8 @@ impl NS16550a {
 		// finish initialization 
 		Self {}
 	}
-}
 
-impl super::UartHandler for NS16550a {
-	fn getchar(&mut self) ->u8 {
+	fn _getchar(&mut self) ->u8 {
 		unsafe {
 			// block until the data is ready 
 			while 0 == read_volatile((BASE + offset::LSR) as *const u8) & mask::LSR_RECV_READY {}
@@ -105,11 +103,34 @@ impl super::UartHandler for NS16550a {
 		}
 	}
 
-	fn putchar(&mut self, c: u8) {
+	fn _putchar(&mut self, c: u8) {
 		unsafe {
 			while 0 == read_volatile((BASE + offset::LSR) as *const u8) & mask::LSR_TRANS_EMPTY {}
 
 			write_volatile((BASE + offset::THR) as *mut u8, c);
 		}
+	}
+}
+
+impl core::fmt::Write for NS16550a {
+	fn write_str(&mut self, fmt: &str) ->core::fmt::Result {
+		let mut buffer = [0u8; 4];
+		for c in fmt.chars() {
+			for code_point in c.encode_utf8(&mut buffer).as_bytes().iter() {
+				self._putchar(*code_point as u8);
+			}
+		}
+
+		Ok(())
+	}
+}
+
+impl super::UartHandler for NS16550a {
+	fn getchar(&mut self) ->u8 {
+		self._getchar()
+	}
+
+	fn putchar(&mut self, c: u8) {
+		self._putchar(c);
 	}
 }

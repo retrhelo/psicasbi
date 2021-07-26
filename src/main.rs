@@ -7,7 +7,6 @@
 mod config;		// basic configurations 
 mod heap;		// SBI heap
 mod hal;		// hardware abstraction layer 
-mod console;	// for output
 
 extern crate alloc;
 
@@ -55,6 +54,9 @@ extern "C" fn rust_main(hartid: usize) {
 
 		// print logo
 		println!("{}", config::LOGO);
+
+		hal::clint::init();		// init CLINT
+		println!("clint init\n");
 	}
 	else {
 		unsafe {
