@@ -53,7 +53,8 @@ extern "C" fn rust_main(hartid: usize) {
 		// faster UART is working, the better
 		hal::uart::init();	// init uart
 
-		println!("hello world\n");
+		// print logo
+		println!("{}", config::LOGO);
 	}
 	else {
 		unsafe {

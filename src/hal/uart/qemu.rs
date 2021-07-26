@@ -73,21 +73,21 @@ impl NS16550a {
 				mask::LCR_LEN0 | mask::LCR_LEN1
 			);
 
+			// enable interrupt for recv
+			let int_mask = 
+			if RECV_IRQ { mask::IER_RECV } else {0}
+			| if TRANS_IRQ { mask::IER_TRANS } else {0};
+			write_volatile(
+				(BASE + offset::IER) as *mut u8, 
+				int_mask
+			);
+			
 			// enable FIFO 
 			write_volatile(
 				(BASE + offset::FCR) as *mut u8, 
 				mask::FCR_FIFO_EN | 
 				mask::FCR_RECV_RST | mask::FCR_TRANS_RST
 			);
-
-			// enable interrupt for recv
-			let int_mask = 
-				if RECV_IRQ { mask::IER_RECV } else {0}
-				| if TRANS_IRQ { mask::IER_TRANS } else {0};
-			write_volatile(
-				(BASE + offset::IER) as *mut u8, 
-				int_mask
-			)
 		}
 
 		// finish initialization 
