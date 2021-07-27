@@ -4,9 +4,15 @@
 #![feature(asm)]
 #![feature(default_alloc_error_handler)]
 
-mod config;		// basic configurations 
-mod heap;		// SBI heap
-mod hal;		// hardware abstraction layer 
+// basic configurations 
+mod config;
+// SBI heap
+mod heap;
+// hardware abstraction layer 
+#[macro_use]
+mod hal;
+// trap vector
+mod trap;
 
 extern crate alloc;
 
@@ -14,6 +20,7 @@ use core::panic::PanicInfo;
 #[panic_handler]
 #[allow(dead_code)]
 fn panic(_info: &PanicInfo) ->! {
+	println!("\033[31;1m[panic]\033[0m: PascSBI stops");
 	loop {}
 }
 
@@ -56,9 +63,15 @@ extern "C" fn rust_main(hartid: usize) {
 		println!("{}", config::LOGO);
 
 		hal::clint::init();		// init CLINT
-		println!("clint init\n");
+		println!("clint init");
+
+		trap::init();
+		println!("trap init");
 	}
 	else {
+		trap::init();
+		println!("trap init");
+
 		unsafe {
 			// hang up for M-mode ipi
 			asm::wfi();

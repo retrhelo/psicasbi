@@ -1,5 +1,7 @@
 /* basic configurations about PascSBI */
 
+#![allow(dead_code)]
+
 pub const CLK: u64 = 11_059_200;
 
 pub const NCPU: usize = 2;
@@ -15,6 +17,18 @@ pub mod uart {
 	pub const TRANS_IRQ: bool = false;
 }
 
+// SBI specification version: 0.3.0
+pub const SBI_SPEC_VER_MAJOR: u32 = 0;
+pub const SBI_SPEC_VER_MINOR: u32 = 3;
+
+// SBI implemenation version, directly from cargo
+use lazy_static::*;
+lazy_static! {
+    pub static ref SBI_IMPL_VER_MAJOR: u32 = env!("CARGO_PKG_VERSION_MAJOR").parse().unwrap();
+    pub static ref SBI_IMPL_VER_MINOR: u32 = env!("CARGO_PKG_VERSION_MINOR").parse().unwrap();
+}
+
+pub const SBI_IMPL_ID: u64 = 0;       // no valid implemenation id for now
 pub const LOGO: &'static str = "
 ________  ________  ________  ________  ________  ________  ___
 |\\   __  \\|\\   __  \\|\\   ____\\|\\   ____\\|\\   ____\\|\\   __  \\|\\  \\    

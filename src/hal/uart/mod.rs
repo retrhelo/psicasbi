@@ -25,7 +25,13 @@ pub fn init() {
 #[allow(dead_code)]
 pub fn putchar(c: u8) {
 	unsafe {
-		UART_INST.lock().as_mut().unwrap().putchar(c);
+		let mut uart = UART_INST.lock();
+		if uart.is_none() {		// if not initialized
+			loop {}
+		}
+		else {
+			uart.as_mut().unwrap().putchar(c);
+		}
 	}
 }
 
@@ -37,9 +43,14 @@ pub fn getchar() ->u8 {
 }
 
 pub fn _print(args: fmt::Arguments) {
-	// UART_INST.lock().write_fmt(args).unwrap();
 	unsafe {
-		UART_INST.lock().as_mut().unwrap().write_fmt(args).unwrap();
+		let mut uart = UART_INST.lock();
+		if uart.is_none() {
+			loop {}
+		}
+		else {
+			uart.as_mut().unwrap().write_fmt(args).unwrap();
+		}
 	}
 }
 
