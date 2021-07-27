@@ -130,6 +130,7 @@ fn trap_handler(tf: &mut TrapFrame) {
 	match cause {
 		Trap::Exception(Exception::SupervisorEnvCall) => {
 			sbi::handler(tf);
+			mepc::write(mepc::read().wrapping_add(4))
 		}, 
 		_ => {
 			panic!(
@@ -152,5 +153,5 @@ pub fn init() {
 }
 
 fn tf_dump(tf: &TrapFrame) {
-	println!("{:?}", tf);
+	println!("{:x?}", tf);
 }
