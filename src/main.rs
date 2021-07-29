@@ -59,14 +59,31 @@ extern "C" fn rust_main(hartid: usize) {
 		// faster UART is working, the better
 		hal::uart::init();	// init uart
 
-		// print logo
-		println!("{}", config::LOGO);
-
 		hal::clint::init();		// init CLINT
 		println!("clint init");
 
-		trap::init();
+		trap::init();			// init trap handling
 		println!("trap init");
+
+		// display PascSBI information
+		println!(
+			"[\033[32;1mPascSBI\033[0m]: Version {}.{}", 
+			*SBI_IMPL_VER_MAJOR, 
+			*SBI_IMPL_VER_MINOR
+		);
+		println!("{}", LOGO);
+		let mideleg: u64;
+		let medeleg: u64;
+		unsafe {	// read mideleg and medeleg and print
+			asm!("
+				csrr {0}, mideleg
+			", out(reg) mideleg);
+			asm!(
+				"csrr {0}, medeleg", 
+				out(reg) medeleg
+			);
+		}
+		println!("mideleg: {:#x}, medeleg: {:#x}", mideleg, medeleg);
 	}
 	else {
 		trap::init();
@@ -76,5 +93,16 @@ extern "C" fn rust_main(hartid: usize) {
 			// hang up for M-mode ipi
 			asm::wfi();
 		}
+	}
+
+	// !TODO: test if it jumps into S-mode kernel
+	// jump to S-mode kernel
+	unsafe {
+		asm!(
+			"csrw mepc, {kernel_entry}", 
+			"mret", 
+			kernel_entry = const KERNEL_ENTRY, 
+			options(noreturn)
+		);
 	}
 }

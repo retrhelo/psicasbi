@@ -129,9 +129,19 @@ fn trap_handler(tf: &mut TrapFrame) {
 
 	match cause {
 		Trap::Exception(Exception::SupervisorEnvCall) => {
+			unsafe { mstatus::set_mie(); }	// allow interrupts when handling SBI call
 			sbi::handler(tf);
 			mepc::write(mepc::read().wrapping_add(4))
 		}, 
+		Trap::Interrupt(Interrupt::MachineTimer) => {
+			// delegate to supervisor 
+			unsafe {
+				mip::set_stimer();
+				mip::clear_mtimer();
+			}
+		}, 
+		Trap::Interrupt(Interrupt::MachineSoft) => {}, 
+		Trap::Interrupt(Interrupt::MachineExternal) => {},
 		_ => {
 			panic!(
 				"Unhandled exception! mcause: {:?}, mepc: {:016x?}, mtval: {:016x?}, trap frame: {:p}, {:x?}",
@@ -145,11 +155,38 @@ fn trap_handler(tf: &mut TrapFrame) {
 	}
 }
 
+use riscv::register::{
+	mstatus, mtvec, mie, mip, 
+};
 
+// should run on every hart
 pub fn init() {
-	println!("hello world");
+	// install trap vector 
+	unsafe {
+		mtvec::write(
+			trap_vec as usize, 
+			mtvec::TrapMode::Direct
+		);
+	}
 
-	loop {}
+	// delegate traps
+	unsafe {
+		// somehow we can't set medeleg via riscv crate
+		asm!("
+			li t0, 0x222
+			csrw mideleg, t0
+			li t0, 0xb1ab
+			csrw medeleg, t0
+		");
+	}
+
+	// enable interrupts
+	unsafe {
+		mie::set_mext();
+		mie::set_msoft();
+		mie::set_mtimer();
+		mstatus::set_mie();
+	}
 }
 
 fn tf_dump(tf: &TrapFrame) {
