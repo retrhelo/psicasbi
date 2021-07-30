@@ -54,7 +54,7 @@ unsafe extern "C" fn _entry() ->! {
 use riscv::asm;
 use riscv::register::mstatus::MPP;
 use riscv::register::{
-	mepc, mstatus, 
+	mepc, mstatus, misa, 
 };
 
 #[no_mangle]
@@ -72,14 +72,15 @@ extern "C" fn rust_main(hartid: usize) {
 		println!("trap init");
 
 		// display PascSBI information
+		println!("{}", LOGO);
 		println!(
 			"[\x1b[32;1mPsicaSBI\x1b[0m]: Version {}.{}", 
 			*SBI_IMPL_VER_MAJOR, 
 			*SBI_IMPL_VER_MINOR
 		);
-		println!("{}", LOGO);
-		let mideleg: u64;
-		let medeleg: u64;
+
+		let mideleg: usize;
+		let medeleg: usize;
 		unsafe {	// read mideleg and medeleg and print
 			asm!("
 				csrr {0}, mideleg
@@ -90,6 +91,26 @@ extern "C" fn rust_main(hartid: usize) {
 			);
 		}
 		println!("mideleg: {:#x}, medeleg: {:#x}", mideleg, medeleg);
+
+		// print extension informations
+		let misa = misa::read().unwrap();
+		match misa.mxl() {
+			misa::MXL::XLEN32 => {
+				panic!("RV32 not supported");
+			}, 
+			misa::MXL::XLEN64 => {
+				print!("Extension: RV64");
+			}, 
+			misa::MXL::XLEN128 => {
+				panic!("RV128 tql, not supported");
+			}
+		}
+		for ext in 'A'..'Z' {
+			if misa.has_extension(ext) {
+				print!("{}", ext);
+			}
+		}
+		println!("");
 	}
 	else {
 		trap::init();
@@ -101,7 +122,6 @@ extern "C" fn rust_main(hartid: usize) {
 		}
 	}
 
-	// !TODO: test if it jumps into S-mode kernel
 	// jump to S-mode kernel
 	unsafe {
 		mepc::write(KERNEL_ENTRY);
