@@ -57,17 +57,23 @@ pub(super) fn handler(tf: &TrapFrame) ->SbiRet {
 			}
 		}, 
 		GET_MACHINE_VENDOR_ID => {
-			let val = mvendorid::read().unwrap().bits();
+			let val = if let Some(bits) = mvendorid::read() {
+				bits.bits()
+			} else {0};
 
 			SbiRet(SUCCESS, val as i64)
 		}, 
 		GET_MACHINE_ARCH_ID => {
-			let val = marchid::read().unwrap().bits();
+			let val = if let Some(bits) = marchid::read() {
+				bits.bits()
+			} else {0};
 
 			SbiRet(SUCCESS, val as i64)
 		}, 
 		GET_MACHINE_IMPL_ID => {
-			let val = mimpid::read().unwrap().bits();
+			let val = if let Some(bits) = mimpid::read() {
+				bits.bits()
+			} else {0};
 
 			SbiRet(SUCCESS, val as i64)
 		}, 

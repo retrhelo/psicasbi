@@ -3,6 +3,7 @@
 #![feature(naked_functions)]
 #![feature(asm)]
 #![feature(default_alloc_error_handler)]
+#![feature(fn_align)]
 
 // basic configurations 
 mod config;
@@ -19,8 +20,9 @@ extern crate alloc;
 use core::panic::PanicInfo;
 #[panic_handler]
 #[allow(dead_code)]
-fn panic(_info: &PanicInfo) ->! {
-	println!("\x1b[31;1m[panic]\x1b[0m: PascSBI stops");
+fn panic(info: &PanicInfo) ->! {
+	println!("\x1b[31;1m[panic]\x1b[0m: {}", info);
+	println!("\x1b[31;1m[panic]\x1b[0m: PsicaSBI stops");
 	loop {}
 }
 
@@ -50,6 +52,10 @@ unsafe extern "C" fn _entry() ->! {
 }
 
 use riscv::asm;
+use riscv::register::mstatus::MPP;
+use riscv::register::{
+	mepc, mstatus, 
+};
 
 #[no_mangle]
 #[link_section = ".text.init"]
@@ -67,7 +73,7 @@ extern "C" fn rust_main(hartid: usize) {
 
 		// display PascSBI information
 		println!(
-			"[\x1b[32;1mPascSBI\x1b[0m]: Version {}.{}", 
+			"[\x1b[32;1mPsicaSBI\x1b[0m]: Version {}.{}", 
 			*SBI_IMPL_VER_MAJOR, 
 			*SBI_IMPL_VER_MINOR
 		);
@@ -98,12 +104,11 @@ extern "C" fn rust_main(hartid: usize) {
 	// !TODO: test if it jumps into S-mode kernel
 	// jump to S-mode kernel
 	unsafe {
+		mepc::write(KERNEL_ENTRY);
+		mstatus::set_mpp(MPP::Supervisor);
 		asm!(
-			"li t0, {kernel_entry}", 
-			"csrw mepc, t0", 
-			"csrr a0, mhartid", 
 			"mret", 
-			kernel_entry = const KERNEL_ENTRY, 
+			in("a0") hartid, 
 			options(noreturn)
 		);
 	}

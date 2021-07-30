@@ -4,6 +4,7 @@ mod sbi;
 
 #[naked]
 #[no_mangle]
+#[repr(align(4))]
 unsafe extern "C" fn trap_vec() {
 	// asm codes below are from xv6-k210's kerneltrap, 
 	// which stores contexts on stack
@@ -78,7 +79,7 @@ unsafe extern "C" fn trap_vec() {
 
 		addi sp, sp, 256
 
-		sret
+		mret
 	", options(noreturn));
 }
 
