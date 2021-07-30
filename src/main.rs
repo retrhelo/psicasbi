@@ -20,7 +20,7 @@ use core::panic::PanicInfo;
 #[panic_handler]
 #[allow(dead_code)]
 fn panic(_info: &PanicInfo) ->! {
-	println!("\033[31;1m[panic]\033[0m: PascSBI stops");
+	println!("\x1b[31;1m[panic]\x1b[0m: PascSBI stops");
 	loop {}
 }
 
@@ -67,7 +67,7 @@ extern "C" fn rust_main(hartid: usize) {
 
 		// display PascSBI information
 		println!(
-			"[\033[32;1mPascSBI\033[0m]: Version {}.{}", 
+			"[\x1b[32;1mPascSBI\x1b[0m]: Version {}.{}", 
 			*SBI_IMPL_VER_MAJOR, 
 			*SBI_IMPL_VER_MINOR
 		);
@@ -99,7 +99,9 @@ extern "C" fn rust_main(hartid: usize) {
 	// jump to S-mode kernel
 	unsafe {
 		asm!(
-			"csrw mepc, {kernel_entry}", 
+			"li t0, {kernel_entry}", 
+			"csrw mepc, t0", 
+			"csrr a0, mhartid", 
 			"mret", 
 			kernel_entry = const KERNEL_ENTRY, 
 			options(noreturn)
