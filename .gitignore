@@ -1,2 +1,7 @@
 /.vscode
 /target
+/run.sh
+/tools
+/k210.bin
+/k210.asm
+*back*

@@ -1,9 +1,11 @@
 #![no_std]
 #![no_main]
+
 #![feature(naked_functions)]
 #![feature(asm)]
-#![feature(default_alloc_error_handler)]
-#![feature(fn_align)]
+// #![feature(default_alloc_error_handler)]
+#![feature(alloc_error_handler)]
+// #![feature(fn_align)]
 
 // basic configurations 
 mod config;
@@ -13,7 +15,7 @@ mod heap;
 #[macro_use]
 mod hal;
 // trap vector
-mod trap;
+// mod trap;
 
 extern crate alloc;
 
@@ -28,10 +30,6 @@ fn panic(info: &PanicInfo) ->! {
 
 use config::*;
 
-const STACK_TOTAL_SIZE: usize = STACK_SIZE * NCPU;
-#[link_section = ".bss.stack"]
-static mut SBI_STACK: [u8; STACK_TOTAL_SIZE] = [0; STACK_TOTAL_SIZE];
-
 #[naked]
 #[no_mangle]
 #[link_section = ".text.init"]
@@ -39,19 +37,21 @@ unsafe extern "C" fn _entry() ->! {
 	asm!(r"
 		csrr tp, mhartid
 		mv a0, tp
+		la sp, _sstack
 		slli tp, tp, {offset}
-		la sp, {stack_base}
 		add sp, sp, tp
 		
-		j rust_main
+		call rust_main
+
+		1:
+			j 1b
 	", 
 		offset = const STACK_OFFSET, 
-		stack_base = sym SBI_STACK, 
 		options(noreturn), 
 	)
 }
 
-use riscv::asm;
+// use riscv::asm;
 use riscv::register::mstatus::MPP;
 use riscv::register::{
 	mepc, mstatus, misa, 
@@ -61,17 +61,32 @@ use riscv::register::{
 #[link_section = ".text.init"]
 extern "C" fn rust_main(hartid: usize) {
 	if 0 == hartid {
-		heap::init();	// init heap
-		// faster UART is working, the better
-		hal::uart::init();	// init uart
+		// init bss section 
+		extern "C" {
+			static mut _sbss: u32;
+			static mut _ebss: u32;
+		}
+		unsafe {
+			r0::zero_bss(&mut _sbss, &mut _ebss);
+		}
+		heap::init();
+
+		#[cfg(feature = "k210")]
+		{
+			hal::sysctl::init();
+			hal::sysctl::set_freq();
+			hal::fpioa::init();
+		}
+		hal::uart::init();
+
+		println!("reach here");
 
 		hal::clint::init();		// init CLINT
 		println!("clint init");
 
-		trap::init();			// init trap handling
+		// trap::init();			// install trap handler
 		println!("trap init");
 
-		// display PascSBI information
 		println!("{}", LOGO);
 		println!(
 			"[\x1b[32;1mPsicaSBI\x1b[0m]: Version {}.{}", 
@@ -81,10 +96,11 @@ extern "C" fn rust_main(hartid: usize) {
 
 		let mideleg: usize;
 		let medeleg: usize;
-		unsafe {	// read mideleg and medeleg and print
-			asm!("
-				csrr {0}, mideleg
-			", out(reg) mideleg);
+		unsafe {
+			asm!(
+				"csrr {0}, mideleg", 
+				out(reg) mideleg
+			);
 			asm!(
 				"csrr {0}, medeleg", 
 				out(reg) medeleg
@@ -92,7 +108,6 @@ extern "C" fn rust_main(hartid: usize) {
 		}
 		println!("mideleg: {:#x}, medeleg: {:#x}", mideleg, medeleg);
 
-		// print extension informations
 		let misa = misa::read().unwrap();
 		match misa.mxl() {
 			misa::MXL::XLEN32 => {
@@ -102,10 +117,10 @@ extern "C" fn rust_main(hartid: usize) {
 				print!("Extension: RV64");
 			}, 
 			misa::MXL::XLEN128 => {
-				panic!("RV128 tql, not supported");
+				panic!("RV128 tql, not supported yet");
 			}
 		}
-		for ext in 'A'..'Z' {
+		for ext in 'A'..='Z' {
 			if misa.has_extension(ext) {
 				print!("{}", ext);
 			}
@@ -113,14 +128,10 @@ extern "C" fn rust_main(hartid: usize) {
 		println!("");
 	}
 	else {
-		trap::init();
-		println!("trap init");
-
-		unsafe {
-			// hang up for M-mode ipi
-			asm::wfi();
-		}
+		loop {}
 	}
+
+	loop {}
 
 	// jump to S-mode kernel
 	unsafe {

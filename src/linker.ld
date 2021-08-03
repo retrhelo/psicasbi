@@ -5,8 +5,10 @@ ENTRY(_entry)
 BASE_ADDRESS = 0x80000000;
 
 MEMORY {
-	sbi_space : ORIGIN = BASE_ADDRESS, LENGTH = 128K
+	sbi_space : ORIGIN = 0x80000000, LENGTH = 128K	/* 0x8000_0000 ~ 0x8001_ffff */
 }
+
+PROVIDE(_heap_size = 8K);
 
 SECTIONS
 {
@@ -33,17 +35,25 @@ SECTIONS
 		*(.sdata .sdata.*)
 	} > sbi_space
 
+	. = ALIGN(4K);
 	edata = .;
-	.bss : ALIGN(4K) {
-		*(.bss.heap)
-		*(.bss.stack)
-		sbss = .;
+	_sbss = .;
+	.bss (NOLOAD) : ALIGN(4K) {
 		*(.bss .bss.*)
 		*(.sbss .sbss.*)
 	} > sbi_space
 
-	ebss = .;
 	ekernel = .;
+
+	/* memory for heap */
+	. = ALIGN(4K);
+	_ebss = .;
+	_sheap = .;
+	. += _heap_size;
+	_eheap = .;
+
+	. = ALIGN(4K);
+	_sstack = .;
 
 	/DISCARD/ : {
 		*(.eh_frame)

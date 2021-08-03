@@ -1,4 +1,6 @@
+#[cfg(feature = "qemu")]
 mod qemu;
+#[cfg(feature = "k210")]
 mod k210;
 
 use alloc::boxed::Box;
@@ -18,9 +20,13 @@ static mut CLINT_INST: spin::Mutex<Option<Box<dyn ClintHandler>>> =
 		spin::Mutex::new(None);
 
 pub fn init() {
-	// currently only QEMU use implemented
-	unsafe {
-		*CLINT_INST.lock() = Some(Box::new(qemu::Clint::init()));
+	match () {
+		#[cfg(feature = "qemu")]
+		() => {
+			unsafe {*CLINT_INST.lock() = Some(Box::new(qemu::Clint::init()));}
+		}, 
+		#[cfg(feature = "k210")]
+		() => {}, 
 	}
 }
 

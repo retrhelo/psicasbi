@@ -1,6 +1,8 @@
 // the abstraction of UART
 
+#[cfg(feature = "qemu")]
 mod qemu;
+#[cfg(feature = "k210")]
 mod k210;
 
 use core::option::Option;
@@ -17,8 +19,15 @@ static mut UART_INST: spin::Mutex<Option<Box<dyn UartHandler>>> =
 		spin::Mutex::new(None);
 
 pub fn init() {
-	unsafe {
-		*UART_INST.lock() = Some(Box::new(qemu::NS16550a::init()));
+	match () {
+		#[cfg(feature = "qemu")]
+		() => {
+			unsafe {*UART_INST.lock() = Some(Box::new(qemu::NS16550a::init()));}
+		}, 
+		#[cfg(feature = "k210")]
+		() => {
+			unsafe {*UART_INST.lock() = Some(Box::new(k210::Uart::init()));}
+		}, 
 	}
 }
 

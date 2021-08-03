@@ -96,10 +96,12 @@ impl NS16550a {
 
 	fn _getchar(&mut self) ->u8 {
 		unsafe {
-			// block until the data is ready 
-			while 0 == read_volatile((BASE + offset::LSR) as *const u8) & mask::LSR_RECV_READY {}
-
-			read_volatile((BASE + offset::RHR) as *const u8)
+			if 0 == read_volatile((BASE + offset::LSR) as *const u8) & mask::LSR_RECV_READY {
+				0xff
+			}
+			else {
+				read_volatile((BASE + offset::RHR) as *const u8)
+			}
 		}
 	}
 

@@ -1,16 +1,23 @@
-use crate::config::HEAP_SIZE;
+// use buddy_system_allocator::LockedHeap;
+use linked_list_allocator::LockedHeap;
 
-#[link_section = ".bss.heap"]
-static mut SBI_HEAP: [u8; HEAP_SIZE] = [0; HEAP_SIZE];
-
-use buddy_system_allocator::LockedHeap;
+#[alloc_error_handler]
+fn oom(_: core::alloc::Layout) ->! {
+	loop {}
+}
 
 #[global_allocator]
-static mut HEAP_ALLOCATOR: LockedHeap<32> = LockedHeap::empty();
+static mut HEAP_ALLOCATOR: LockedHeap = LockedHeap::empty();
 
 pub fn init() {
+	extern "C" {
+		fn _sheap();
+		fn _heap_size();
+	}
+	let sheap = &mut _sheap as *mut _ as usize;
+	let heap_size = &_heap_size as *const _ as usize;
+
 	unsafe {
-		HEAP_ALLOCATOR.lock()
-			.init(SBI_HEAP.as_ptr() as usize, HEAP_SIZE);
+		HEAP_ALLOCATOR.lock().init(sheap, heap_size);
 	}
 }
