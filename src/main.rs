@@ -135,9 +135,10 @@ extern "C" fn rust_main(hartid: usize) {
 		println!("");
 	}
 	else {
-		loop {}
+		loop {
+			unsafe {riscv::asm::wfi();}
+		}
 	}
-	loop {}
 
 	// jump to S-mode kernel
 	unsafe {
