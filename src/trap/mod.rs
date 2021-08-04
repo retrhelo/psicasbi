@@ -9,10 +9,10 @@ unsafe extern "C" fn trap_vec() {
 	// asm codes below are from xv6-k210's kerneltrap, 
 	// which stores contexts on stack
 	asm!("
+		csrrw sp, mscratch, sp
 		addi sp, sp, -256
 
 		sd ra, 0(sp)
-		sd sp, 8(sp)
 		sd gp, 16(sp)
 		sd tp, 24(sp)
 		sd t0, 32(sp)
@@ -43,11 +43,13 @@ unsafe extern "C" fn trap_vec() {
 		sd t5, 232(sp)
 		sd t6, 240(sp)
 
+		csrr a0, mscratch
+		sd a0, 8(sp)
+
 		mv a0, sp
 		call trap_handler
 
 		ld ra, 0(sp)
-		ld sp, 8(sp)
 		ld gp, 16(sp)
 		ld t0, 32(sp)
 		ld t1, 40(sp)
@@ -78,6 +80,7 @@ unsafe extern "C" fn trap_vec() {
 		ld t6, 240(sp)
 
 		addi sp, sp, 256
+		csrrw sp, mscratch, sp
 
 		mret
 	", options(noreturn));
@@ -125,20 +128,21 @@ use riscv::register::{
 };
 
 #[no_mangle]
-fn trap_handler(tf: &mut TrapFrame) {
+extern "C" fn trap_handler(tf: &mut TrapFrame) {
 	let cause = mcause::read().cause();
 
 	match cause {
 		Trap::Exception(Exception::SupervisorEnvCall) => {
-			unsafe { mstatus::set_mie(); }	// allow interrupts when handling SBI call
+			// unsafe { mstatus::set_mie(); }	// allow interrupts when handling SBI call
 			sbi::handler(tf);
 			mepc::write(mepc::read().wrapping_add(4))
 		}, 
 		Trap::Interrupt(Interrupt::MachineTimer) => {
 			// delegate to supervisor 
 			unsafe {
-				mip::set_stimer();
 				mip::clear_mtimer();
+				mip::set_stimer();
+				mie::clear_mtimer();
 			}
 		}, 
 		Trap::Interrupt(Interrupt::MachineSoft) => {}, 
@@ -174,7 +178,7 @@ pub fn init() {
 	unsafe {
 		// somehow we can't set medeleg via riscv crate
 		asm!("
-			li t0, 0x222
+			li t0, 0xffff
 			csrw mideleg, t0
 			li t0, 0xb1ab
 			csrw medeleg, t0
@@ -183,8 +187,8 @@ pub fn init() {
 
 	// enable interrupts
 	unsafe {
-		mie::set_mext();
-		mie::set_msoft();
+		// mie::set_mext();
+		// mie::set_msoft();
 		mie::set_mtimer();
 		mstatus::set_mie();
 	}

@@ -24,7 +24,7 @@ const EID_SHUTDOWN: i64 = 8;
 
 use crate::hal::{uart, clint, };
 use riscv::register::{
-	mip, mstatus, 
+	mip, mstatus, mie, 
 };
 
 pub(super) fn handler(tf: &mut TrapFrame) {
@@ -33,8 +33,13 @@ pub(super) fn handler(tf: &mut TrapFrame) {
 	match eid {
 		EID_SET_TIMER => {
 			// void sbi_set_timer(uint64_t stime_value)
+			println!("sbi_set_timer");
 			let stime_value = tf.a0 as u64;
 			clint::set_timer(stime_value);
+			unsafe {
+				mie::set_mtimer();
+				mip::clear_stimer();
+			}
 		}, 
 		EID_CONSOLE_PUTCHAR => {
 			// void sbi_console_putchar(int ch)

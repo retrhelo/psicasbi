@@ -39,6 +39,7 @@ unsafe extern "C" fn _entry() ->! {
 		li sp, {stack_top}
 		slli tp, tp, {offset}
 		sub sp, sp, tp
+		csrw mscratch, sp
 		
 		call rust_main
 
