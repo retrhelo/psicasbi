@@ -3,9 +3,8 @@
 
 #![feature(naked_functions)]
 #![feature(asm)]
-// #![feature(default_alloc_error_handler)]
 #![feature(alloc_error_handler)]
-// #![feature(fn_align)]
+#![feature(fn_align)]
 
 // basic configurations 
 mod config;
@@ -15,7 +14,7 @@ mod heap;
 #[macro_use]
 mod hal;
 // trap vector
-// mod trap;
+mod trap;
 
 extern crate alloc;
 
@@ -37,15 +36,16 @@ unsafe extern "C" fn _entry() ->! {
 	asm!(r"
 		csrr tp, mhartid
 		mv a0, tp
-		la sp, _sstack
+		li sp, {stack_top}
 		slli tp, tp, {offset}
-		add sp, sp, tp
+		sub sp, sp, tp
 		
 		call rust_main
 
 		1:
 			j 1b
 	", 
+		stack_top = const KERNEL_ENTRY, 
 		offset = const STACK_OFFSET, 
 		options(noreturn), 
 	)
@@ -79,12 +79,19 @@ extern "C" fn rust_main(hartid: usize) {
 		}
 		hal::uart::init();
 
-		println!("reach here");
+		extern "C" {
+			fn ekernel();
+		}
+		let ekernel = ekernel as usize;
+		println!("ekernel: {:#x}", ekernel);
+		println!("heap_start: {:#x}", config::HEAP_START);
+		println!("heap_size: {:#x}", config::HEAP_SIZE);
+		assert!(config::HEAP_START > ekernel);
 
 		hal::clint::init();		// init CLINT
 		println!("clint init");
 
-		// trap::init();			// install trap handler
+		trap::init();			// install trap handler
 		println!("trap init");
 
 		println!("{}", LOGO);
@@ -130,7 +137,6 @@ extern "C" fn rust_main(hartid: usize) {
 	else {
 		loop {}
 	}
-
 	loop {}
 
 	// jump to S-mode kernel

@@ -7,10 +7,16 @@ pub const CLK: u64 = 11_059_200;
 #[cfg(feature = "k210")]
 pub const CLK: u64 = 26_000_000;
 
+/// The entry of S-mode kernel
+pub const KERNEL_ENTRY: usize = 0x8020_0000;
+
 pub const NCPU: usize = 2;
 
 pub const STACK_SIZE: usize = 2 * 1024;		// 2 KiB per hart
 pub const STACK_OFFSET: usize = 11;
+
+pub const HEAP_SIZE: usize = 4 * 4 * 1024;
+pub const HEAP_START: usize = KERNEL_ENTRY - STACK_SIZE * NCPU - HEAP_SIZE;
 
 pub mod uart {
 	pub const BAUDRATE: u64 = 115200;
@@ -40,5 +46,3 @@ ________   ________   ___   ________   ________   ________   ________   ___
     \\|__|     |\\_________\\\\|__| \\|_______| \\|__|\\|__||\\_________\\\\|_______| \\|__|
               \\|_________|                           \\|_________|
 ";
-
-pub const KERNEL_ENTRY: usize = 0x8020_0000;

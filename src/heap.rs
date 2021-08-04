@@ -1,5 +1,5 @@
-// use buddy_system_allocator::LockedHeap;
-use linked_list_allocator::LockedHeap;
+use buddy_system_allocator::LockedHeap;
+// use linked_list_allocator::LockedHeap;
 
 #[alloc_error_handler]
 fn oom(_: core::alloc::Layout) ->! {
@@ -7,17 +7,12 @@ fn oom(_: core::alloc::Layout) ->! {
 }
 
 #[global_allocator]
-static mut HEAP_ALLOCATOR: LockedHeap = LockedHeap::empty();
+static mut HEAP_ALLOCATOR: LockedHeap<32> = LockedHeap::empty();
+
+use crate::config::{HEAP_START, HEAP_SIZE};
 
 pub fn init() {
-	extern "C" {
-		fn _sheap();
-		fn _heap_size();
-	}
-	let sheap = &mut _sheap as *mut _ as usize;
-	let heap_size = &_heap_size as *const _ as usize;
-
 	unsafe {
-		HEAP_ALLOCATOR.lock().init(sheap, heap_size);
+		HEAP_ALLOCATOR.lock().init(HEAP_START, HEAP_SIZE);
 	}
 }

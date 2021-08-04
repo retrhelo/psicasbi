@@ -8,8 +8,6 @@ MEMORY {
 	sbi_space : ORIGIN = 0x80000000, LENGTH = 128K	/* 0x8000_0000 ~ 0x8001_ffff */
 }
 
-PROVIDE(_heap_size = 8K);
-
 SECTIONS
 {
 	. = BASE_ADDRESS;
@@ -28,32 +26,26 @@ SECTIONS
 		*(.srodata .srodata.*)
 	} > sbi_space
 
+	. = ALIGN(4);
 	erodata = .;
-	sdata = .;
-	.data : {
+	_sidata = LOADADDR(.data);
+	_sdata = .;
+	.data : ALIGN(4) {
 		*(.data .data.*)
 		*(.sdata .sdata.*)
 	} > sbi_space
 
 	. = ALIGN(4K);
-	edata = .;
+	_edata = .;
 	_sbss = .;
-	.bss (NOLOAD) : ALIGN(4K) {
+	.bss : ALIGN(4K) {
 		*(.bss .bss.*)
 		*(.sbss .sbss.*)
 	} > sbi_space
 
+	. = ALIGN(4K);
 	ekernel = .;
-
-	/* memory for heap */
-	. = ALIGN(4K);
 	_ebss = .;
-	_sheap = .;
-	. += _heap_size;
-	_eheap = .;
-
-	. = ALIGN(4K);
-	_sstack = .;
 
 	/DISCARD/ : {
 		*(.eh_frame)
