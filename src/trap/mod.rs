@@ -178,7 +178,7 @@ pub fn init() {
 	unsafe {
 		// somehow we can't set medeleg via riscv crate
 		asm!("
-			li t0, 0xffff
+			li t0, 0x222
 			csrw mideleg, t0
 			li t0, 0xb1ab
 			csrw medeleg, t0
@@ -188,7 +188,7 @@ pub fn init() {
 	// enable interrupts
 	unsafe {
 		// mie::set_mext();
-		// mie::set_msoft();
+		mie::set_msoft();
 		mie::set_mtimer();
 		mstatus::set_mie();
 	}

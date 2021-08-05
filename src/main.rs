@@ -34,13 +34,13 @@ use config::*;
 #[link_section = ".text.init"]
 unsafe extern "C" fn _entry() ->! {
 	asm!(r"
-		csrr tp, mhartid
-		mv a0, tp
 		li sp, {stack_top}
-		slli tp, tp, {offset}
-		sub sp, sp, tp
+		csrr a0, mhartid
+		slli a0, a0, {offset}
+		sub sp, sp, a0
 		csrw mscratch, sp
 		
+		csrr a0, mhartid
 		call rust_main
 
 		1:
@@ -92,7 +92,7 @@ extern "C" fn rust_main(hartid: usize) {
 		hal::clint::init();		// init CLINT
 		println!("clint init");
 
-		trap::init();			// install trap handler
+		trap::init();			// install trap handler, this should run per-hart
 		println!("trap init");
 
 		println!("{}", LOGO);
@@ -140,6 +140,7 @@ extern "C" fn rust_main(hartid: usize) {
 			unsafe {riscv::asm::wfi();}
 		}
 	}
+	println!("[\x1b[32;1mPsicaSBI\x1b[0m]: hartid {}", hartid);
 
 	// jump to S-mode kernel
 	unsafe {

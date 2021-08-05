@@ -50,7 +50,7 @@ pub(super) fn handler(tf: &TrapFrame) ->SbiRet {
 			let ext = tf.a0;
 
 			if probe_extension(ext) {
-				SbiRet(SUCCESS, 0)
+				SbiRet(SUCCESS, ext)
 			}
 			else {
 				SbiRet(ERR_FAILED, 0)
@@ -94,5 +94,11 @@ fn make_ver(major: u32, minor: u32) ->u32 {
 
 #[inline]
 fn probe_extension(ext: i64) ->bool {
-	super::EID_BASE == ext
+	(super::EID_BASE == ext) | 
+	(super::legacy::EID_SET_TIMER == ext) | 
+	(super::legacy::EID_CONSOLE_PUTCHAR == ext) | 
+	(super::legacy::EID_CONSOLE_GETCHAR == ext) |
+	(super::legacy::EID_CLEAR_IPI == ext) |
+	(super::legacy::EID_SEND_IPI == ext) |
+	(super::legacy::EID_SHUTDOWN == ext)
 }

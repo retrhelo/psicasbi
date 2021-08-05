@@ -12,15 +12,15 @@
 use super::TrapFrame;
 use super::error::*;
 
-const EID_SET_TIMER: i64 = 0;
-const EID_CONSOLE_PUTCHAR: i64 = 1;
-const EID_CONSOLE_GETCHAR: i64 = 2;
-const EID_CLEAR_IPI: i64 = 3;
-const EID_SEND_IPI: i64 = 4;
-const EID_REMOTE_FENCE_I: i64 = 5;
-const EID_REMOTE_SFENCE_VMA: i64 = 6;
-const EID_REMOTE_SFENCE_VMA_ASID: i64 = 7;
-const EID_SHUTDOWN: i64 = 8;
+pub const EID_SET_TIMER: i64 = 0;
+pub const EID_CONSOLE_PUTCHAR: i64 = 1;
+pub const EID_CONSOLE_GETCHAR: i64 = 2;
+pub const EID_CLEAR_IPI: i64 = 3;
+pub const EID_SEND_IPI: i64 = 4;
+pub const EID_REMOTE_FENCE_I: i64 = 5;
+pub const EID_REMOTE_SFENCE_VMA: i64 = 6;
+pub const EID_REMOTE_SFENCE_VMA_ASID: i64 = 7;
+pub const EID_SHUTDOWN: i64 = 8;
 
 use crate::hal::{uart, clint, };
 use riscv::register::{
@@ -48,7 +48,7 @@ pub(super) fn handler(tf: &mut TrapFrame) {
 		}, 
 		EID_CONSOLE_GETCHAR => {
 			// int sbi_console_getchar(void)
-			tf.a0 = uart::getchar() as i64;
+			tf.a0 = (uart::getchar() as i8) as i64;
 		}, 
 		EID_CLEAR_IPI => {
 			// void sbi_clear_ipi(void)

@@ -12,8 +12,8 @@ pub const KERNEL_ENTRY: usize = 0x8002_0000;
 
 pub const NCPU: usize = 2;
 
-pub const STACK_SIZE: usize = 2 * 1024;		// 2 KiB per hart
-pub const STACK_OFFSET: usize = 11;
+pub const STACK_SIZE: usize = 4 * 1024;		// 4 KiB per hart
+pub const STACK_OFFSET: usize = STACK_SIZE.trailing_zeros() as usize;
 
 pub const HEAP_SIZE: usize = 4 * 4 * 1024;
 pub const HEAP_START: usize = KERNEL_ENTRY - STACK_SIZE * NCPU - HEAP_SIZE;
