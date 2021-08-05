@@ -1,13 +1,12 @@
 [package]
 name = "psicasbi"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 lazy_static = { version = "1", features = ["spin_no_std"] }
-# spin = { version = "0.9.0", features = ["mutex", "spin_mutex"] }
 spin = "0.9.0"
 riscv = "0.6.0"
 buddy_system_allocator = "0.8"
@@ -15,7 +14,7 @@ k210-pac = "0.2.0"
 r0 = "1.0.0"
 
 [features]
-default = ["k210"]
+default = ["qemu"]
 qemu = []
 k210 = []
 

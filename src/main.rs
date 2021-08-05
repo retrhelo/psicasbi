@@ -52,11 +52,7 @@ unsafe extern "C" fn _entry() ->! {
 	)
 }
 
-// use riscv::asm;
-use riscv::register::mstatus::MPP;
-use riscv::register::{
-	mepc, mstatus, misa, 
-};
+use riscv::register::misa;
 
 #[no_mangle]
 #[link_section = ".text.init"]
@@ -136,20 +132,12 @@ extern "C" fn rust_main(hartid: usize) {
 		println!("");
 	}
 	else {
-		loop {
-			unsafe {riscv::asm::wfi();}
+		trap::init();
+		unsafe {
+			riscv::asm::wfi();
 		}
 	}
-	println!("[\x1b[32;1mPsicaSBI\x1b[0m]: hartid {}", hartid);
 
 	// jump to S-mode kernel
-	unsafe {
-		mepc::write(KERNEL_ENTRY);
-		mstatus::set_mpp(MPP::Supervisor);
-		asm!(
-			"mret", 
-			in("a0") hartid, 
-			options(noreturn)
-		);
-	}
+	trap::enter_supervisor(hartid);
 }
