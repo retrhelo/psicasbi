@@ -85,9 +85,6 @@ extern "C" fn rust_main(hartid: usize) {
 		println!("heap_size: {:#x}", config::HEAP_SIZE);
 		assert!(config::HEAP_START > ekernel);
 
-		hal::clint::init();		// init CLINT
-		println!("clint init");
-
 		trap::init();			// install trap handler, this should run per-hart
 		println!("trap init");
 
@@ -133,10 +130,17 @@ extern "C" fn rust_main(hartid: usize) {
 	}
 	else {
 		trap::init();
-		unsafe {
-			riscv::asm::wfi();
+		loop {
+			unsafe {
+				riscv::asm::wfi();
+				if riscv::register::mip::read().msoft() {
+					break;
+				}
+			}
 		}
 	}
+
+	println!("PsicaSBI hartid {} ready", hartid);
 
 	// jump to S-mode kernel
 	trap::enter_supervisor(hartid);

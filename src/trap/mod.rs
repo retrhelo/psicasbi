@@ -262,6 +262,7 @@ extern "C" fn trap_handler(tf: &mut TrapFrame) {
 
 use riscv::register::{
 	mstatus, mtvec, mie, mip, 
+	mhartid, 
 };
 
 // should run on every hart
@@ -290,9 +291,11 @@ pub fn init() {
 		// mie::set_mext();
 		mie::set_msoft();
 		mie::set_mtimer();
-		mip::clear_msoft();
+		crate::hal::clint::clear_ipi(
+			mhartid::read()
+		);
 		mip::clear_mtimer();
-		mstatus::set_mie();
+		// mstatus::set_mie();
 	}
 }
 
