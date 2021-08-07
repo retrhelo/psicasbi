@@ -6,6 +6,11 @@ use super::TrapFrame;
 
 mod base;
 mod legacy;
+mod time;
+mod ipi;
+
+mod firmware;
+mod vendor;
 
 #[allow(dead_code)]
 mod error {
@@ -23,6 +28,12 @@ mod error {
 const EID_BASE: i64 = 0x10;
 const EID_LEGACY_MIN: i64 = 0x00;
 const EID_LEGACY_MAX: i64 = 0x0f;
+const EID_TIME: i64 = 0x5449_4d45;
+const EID_IPI: i64 = 0x0073_5049;
+const EID_VENDOR_MIN: i64 = 0x0900_0000;
+const EID_VENDOR_MAX: i64 = 0x09ff_ffff;
+const EID_FIRMWARE_MIN: i64 = 0x0a00_0000;
+const EID_FIRMWARE_MAX: i64 = 0x0aff_ffff;
 
 // SbiRet(error, value)
 struct SbiRet(i64, i64);
@@ -31,7 +42,7 @@ pub(super) fn handler(tf: &mut TrapFrame) {
 	let eid = tf.a7;
 
 	if eid >= EID_LEGACY_MIN && eid <= EID_LEGACY_MAX {
-		// a legacy sbi function, which returns int or void, different from other SBI functions
+		// a legacy sbi function, which returns int or void, differs from other SBI functions
 		// According to sbi spec, legacy calls are "deprecated in favor of the other
 		// extensions". So I suggest avoid using them in the S-mode kernel
 		legacy::handler(tf);
@@ -39,6 +50,18 @@ pub(super) fn handler(tf: &mut TrapFrame) {
 	else {
 		let ret = if EID_BASE == eid {
 			base::handler(tf)
+		}
+		else if EID_TIME == eid {
+			time::handler(tf)
+		}
+		else if EID_IPI == eid {
+			ipi::handler(tf)
+		}
+		else if eid >= EID_VENDOR_MIN && eid <= EID_VENDOR_MAX {
+			vendor::handler(tf)
+		}
+		else if eid >= EID_FIRMWARE_MIN && eid <= EID_FIRMWARE_MAX {
+			firmware::handler(tf)
 		}
 		else {
 			println!("unsupported SBI extension: {:#x}", eid);

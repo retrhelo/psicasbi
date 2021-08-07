@@ -1,6 +1,7 @@
 // M-mode trap handling
 
 mod sbi;
+mod sbt;
 
 /// This vector is used when trap from S/U mode
 #[naked]
@@ -207,6 +208,7 @@ use riscv::register::{
 	mcause, 
 	mcause::{Trap, Interrupt, Exception}, 
 	mepc, mtval, 
+	stval, 
 };
 
 #[no_mangle]
@@ -246,10 +248,43 @@ extern "C" fn trap_handler(tf: &mut TrapFrame) {
 			let hartid = riscv::register::mhartid::read();
 			crate::hal::clint::clear_ipi(hartid);
 		}, 
-		Trap::Interrupt(Interrupt::MachineExternal) => {},
+		Trap::Interrupt(Interrupt::MachineExternal) => {
+			match () {
+				#[cfg(feature = "soft-extern")]
+				() => {
+					// This setting is for those which doesn't implement S-mode 
+					// external interrupts, like k210. If your hardware does have 
+					// Supervisor External Interrupt, then delegate it to S-mode 
+					// may be a better solution. 
+					// For the sake of k210, we deliver a software interrupt to S-mode 
+					// kernel, so that the kernel can deal the it in S-mode. And after 
+					// the interrupt is "complete", the kernel should re-trap into 
+					// SBI to enable MEIP, which can be done by SBI function sbi_xv6_set_ext()
+					unsafe {
+						mie::clear_mext();
+						// disable mtimer because we don't want to be interrupted
+						// this may not be necessary
+						mie::clear_mtimer();
+
+						// set stval to specify that the software interrupt is raised 
+						// by a external interrupt
+						asm!("csrw stval, {0}", in(reg) 0x9);
+						// set S-mode software interrupt 
+						mip::set_ssoft();
+					}
+				}, 
+				#[cfg(not(feature = "soft-extern"))]
+				() => {
+					// do nothing here
+				}, 
+			}
+		},
+		Trap::Exception(Exception::IllegalInstruction) => {
+			
+		}, 
 		_ => {
 			panic!(
-				"Unhandled exception! mcause: {:?}, mepc: {:016x?}, mtval: {:016x?}, trap frame: {:p}, {:x?}",
+				"Unhandled exception! mcause: {:?}, mepc: {:016x?}, mtval: {:016x?}\ntrap frame: {:p}\n{:x?}",
 				cause,
 				mepc::read(),
 				mtval::read(),

@@ -35,6 +35,7 @@ pub fn set_timer(timer_val: u64) {
 	}
 }
 
+/// Set M-Mode IPI by writting to memory-mapped msip reg 
 #[allow(dead_code)]
 pub fn send_ipi(hartid: usize) {
 	match () {
@@ -49,6 +50,7 @@ pub fn send_ipi(hartid: usize) {
 	}
 }
 
+/// Clear M-Mode IPI by writting to memory-mapped msip reg
 #[allow(dead_code)]
 pub fn clear_ipi(hartid: usize) {
 	match () {

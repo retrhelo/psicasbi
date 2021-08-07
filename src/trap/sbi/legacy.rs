@@ -5,22 +5,22 @@
 // using them in your S-mode kernel codes. 
 // However, two key functions `sbi_console_getchar()` and `sbi_console_putchar()`
 // "have no replacement" for **now**. As they are so important to the kernel for 
-// output, it would be hard to escape from them. 
+// output, it would be hard to escape from using them. 
 
 #![allow(dead_code)]
 
 use super::TrapFrame;
 use super::error::*;
 
-pub const EID_SET_TIMER: i64 = 0;
-pub const EID_CONSOLE_PUTCHAR: i64 = 1;
-pub const EID_CONSOLE_GETCHAR: i64 = 2;
-pub const EID_CLEAR_IPI: i64 = 3;
-pub const EID_SEND_IPI: i64 = 4;
-pub const EID_REMOTE_FENCE_I: i64 = 5;
-pub const EID_REMOTE_SFENCE_VMA: i64 = 6;
-pub const EID_REMOTE_SFENCE_VMA_ASID: i64 = 7;
-pub const EID_SHUTDOWN: i64 = 8;
+const EID_SET_TIMER: i64 = 0;
+const EID_CONSOLE_PUTCHAR: i64 = 1;
+const EID_CONSOLE_GETCHAR: i64 = 2;
+const EID_CLEAR_IPI: i64 = 3;
+const EID_SEND_IPI: i64 = 4;
+const EID_REMOTE_FENCE_I: i64 = 5;
+const EID_REMOTE_SFENCE_VMA: i64 = 6;
+const EID_REMOTE_SFENCE_VMA_ASID: i64 = 7;
+const EID_SHUTDOWN: i64 = 8;
 
 use crate::hal::{uart, clint, };
 use riscv::register::{
@@ -33,7 +33,6 @@ pub(super) fn handler(tf: &mut TrapFrame) {
 	match eid {
 		EID_SET_TIMER => {
 			// void sbi_set_timer(uint64_t stime_value)
-			println!("sbi_set_timer");
 			let stime_value = tf.a0 as u64;
 			clint::set_timer(stime_value);
 			unsafe {
@@ -52,7 +51,7 @@ pub(super) fn handler(tf: &mut TrapFrame) {
 		}, 
 		EID_CLEAR_IPI => {
 			// void sbi_clear_ipi(void)
-			// This funciton is deprecated as SSIP can be cleared by software now
+			// This funciton is deprecated as SSIP can be cleared in Supervisor by software now
 			unsafe {
 				mip::clear_ssoft();
 			}
@@ -61,7 +60,8 @@ pub(super) fn handler(tf: &mut TrapFrame) {
 			// void sbi_send_ipi(const unsigned long *hart_mask)
 			// It's really wierd to pass hart_mask via a pointer, maybe it's for 
 			// cases where more than 32 harts exists
-			// And as this function is deprecated, 
+			// And as this function is deprecated, the new interface use 
+			// (hart_mask: u32, hart_mask_base: u32) instead, which sounds more reasonable.
 			let hart_mask = unsafe {
 				*(tf.a0 as *const u32)
 			} as usize;
@@ -96,4 +96,14 @@ pub(super) fn handler(tf: &mut TrapFrame) {
 			tf.a0 = ERR_NOT_SUPPORTED;
 		}
 	}
+}
+
+#[inline]
+pub(super) fn has_extension(ext: i64) ->bool {
+	(EID_SET_TIMER == ext) |
+	(EID_CONSOLE_PUTCHAR == ext) |
+	(EID_CONSOLE_GETCHAR == ext) |
+	(EID_CLEAR_IPI == ext) |
+	(EID_SEND_IPI == ext) |
+	(EID_SHUTDOWN == ext)
 }
