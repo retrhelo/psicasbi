@@ -65,7 +65,6 @@ pub(super) fn handler(tf: &mut TrapFrame) {
 		}
 		else {
 			println!("unsupported SBI extension: {:#x}", eid);
-			super::tf_dump(tf);
 			SbiRet(ERR_NOT_SUPPORTED, 0)
 		};
 

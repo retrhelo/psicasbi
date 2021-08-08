@@ -8,7 +8,8 @@ pub const CLK: u64 = 11_059_200;
 pub const CLK: u64 = 26_000_000;
 
 /// The entry of S-mode kernel
-pub const KERNEL_ENTRY: usize = 0x8002_0000;
+// pub const KERNEL_ENTRY: usize = 0x8002_0000;
+pub const KERNEL_ENTRY: usize = 0x8020_0000;
 
 pub const NCPU: usize = 2;
 
@@ -35,7 +36,7 @@ lazy_static! {
     pub static ref SBI_IMPL_VER_MINOR: u32 = env!("CARGO_PKG_VERSION_MINOR").parse().unwrap();
 }
 
-pub const SBI_IMPL_ID: u64 = 0;       // no valid implemenation id for now
+pub const SBI_IMPL_ID: u64 = 0;       // no valid implementation id for now
 pub const LOGO: &'static str = "
 ________   ________   ___   ________   ________   ________   ________   ___     
 |\\   __  \\ |\\   ____\\ |\\  \\ |\\   ____\\ |\\   __  \\ |\\   ____\\ |\\   __  \\ |\\  \\    

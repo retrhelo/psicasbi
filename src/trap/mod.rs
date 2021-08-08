@@ -169,6 +169,7 @@ unsafe extern "C" fn sbi_trap_vec() {
 	", options(noreturn));
 }
 
+#[repr(C)]
 #[derive(Debug)]
 struct TrapFrame {
 	ra: i64, 
@@ -208,7 +209,6 @@ use riscv::register::{
 	mcause, 
 	mcause::{Trap, Interrupt, Exception}, 
 	mepc, mtval, 
-	stval, 
 };
 
 #[no_mangle]
@@ -217,28 +217,31 @@ extern "C" fn trap_handler(tf: &mut TrapFrame) {
 
 	match cause {
 		Trap::Exception(Exception::SupervisorEnvCall) => {
-			unsafe {
-				// install trap vec for SBI, to support nested trap
-				mtvec::write(sbi_trap_vec as usize, mtvec::TrapMode::Direct);
-				mstatus::set_mie();
-			}
+			// let mepc = mepc::read().wrapping_add(4);
+			// unsafe {
+			// 	// install trap vec for SBI, to support nested trap
+			// 	mtvec::write(sbi_trap_vec as usize, mtvec::TrapMode::Direct);
+			// 	mstatus::set_mie();
+			// }
 			sbi::handler(tf);
 			mepc::write(mepc::read().wrapping_add(4));
-			unsafe {
-				// restore trap vec 
-				mstatus::clear_mie();
-				mtvec::write(trap_vec as usize, mtvec::TrapMode::Direct);
-			}
+			// unsafe {
+			// 	// restore trap vec 
+			// 	mstatus::clear_mie();
+			// 	mepc::write(mepc);
+			// 	mtvec::write(trap_vec as usize, mtvec::TrapMode::Direct);
+			// }
 		}, 
 		Trap::Interrupt(Interrupt::MachineTimer) => {
+			// println!("hart {} MachineTimer", mhartid::read());
 			// delegate to supervisor 
 			unsafe {
-				mip::clear_mtimer();
 				mip::set_stimer();
 				mie::clear_mtimer();
 			}
 		}, 
 		Trap::Interrupt(Interrupt::MachineSoft) => {
+			//println!("hart {} MachineSoft", mhartid::read());
 			unsafe {
 				mip::set_ssoft();
 			}
@@ -249,10 +252,11 @@ extern "C" fn trap_handler(tf: &mut TrapFrame) {
 			crate::hal::clint::clear_ipi(hartid);
 		}, 
 		Trap::Interrupt(Interrupt::MachineExternal) => {
+			//println!("hart {} MachineExternal", mhartid::read());
 			match () {
 				#[cfg(feature = "soft-extern")]
 				() => {
-					// This setting is for those which doesn't implement S-mode 
+					// This setting is for those which don't implement S-mode 
 					// external interrupts, like k210. If your hardware does have 
 					// Supervisor External Interrupt, then delegate it to S-mode 
 					// may be a better solution. 
@@ -266,12 +270,13 @@ extern "C" fn trap_handler(tf: &mut TrapFrame) {
 						// this may not be necessary
 						mie::clear_mtimer();
 
+						// set S-mode software interrupt 
+						mip::set_ssoft();
 						// set stval to specify that the software interrupt is raised 
 						// by a external interrupt
 						asm!("csrw stval, {0}", in(reg) 0x9);
-						// set S-mode software interrupt 
-						mip::set_ssoft();
 					}
+					println!("SBI hart {} stval {:016x}", mhartid::read(), stval::read());
 				}, 
 				#[cfg(not(feature = "soft-extern"))]
 				() => {
@@ -279,9 +284,6 @@ extern "C" fn trap_handler(tf: &mut TrapFrame) {
 				}, 
 			}
 		},
-		Trap::Exception(Exception::IllegalInstruction) => {
-			
-		}, 
 		_ => {
 			panic!(
 				"Unhandled exception! mcause: {:?}, mepc: {:016x?}, mtval: {:016x?}\ntrap frame: {:p}\n{:x?}",
@@ -314,28 +316,25 @@ pub fn init() {
 	unsafe {
 		// somehow we can't set medeleg via riscv crate
 		asm!("
-			li t0, 0x222
-			csrw mideleg, t0
-			li t0, 0xb1ab
-			csrw medeleg, t0
-		");
+			li {0}, 0x222
+			csrw mideleg, {0}
+			li {0}, 0xb1ab
+			csrw medeleg, {0}
+		", out(reg) _);
 	}
 
 	// enable interrupts
 	unsafe {
-		// mie::set_mext();
-		mie::set_msoft();
-		mie::set_mtimer();
 		crate::hal::clint::clear_ipi(
 			mhartid::read()
 		);
-		mip::clear_mtimer();
-		// mstatus::set_mie();
+		mie::set_mext();
+		mie::set_msoft();
+		// we don't enable mtimer because it would be enabled 
+		// through SBI call set_timer()
+		// And enable mtimer may introduce some problem in kernel, 
+		// like a mtimer interrupt before kernel's trapvec is installed.
 	}
-}
-
-fn tf_dump(tf: &TrapFrame) {
-	println!("{:x?}", tf);
 }
 
 use mstatus::MPP;
@@ -353,6 +352,7 @@ pub fn enter_supervisor(hartid: usize) {
 		mepc::write(KERNEL_ENTRY);
 
 		asm!(
+			"csrw mscratch, sp", 
 			"mret", 
 			in("a0") hartid, 
 			options(noreturn)

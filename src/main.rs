@@ -132,8 +132,12 @@ extern "C" fn rust_main(hartid: usize) {
 		trap::init();
 		loop {
 			unsafe {
+				// Because during the boot sequence MIE is not set, 
+				// a trap will cause the PC reg to skip wfi instruction, 
+				// but SBI won't run into the trap handler. 
 				riscv::asm::wfi();
 				if riscv::register::mip::read().msoft() {
+					hal::clint::clear_ipi(hartid);
 					break;
 				}
 			}

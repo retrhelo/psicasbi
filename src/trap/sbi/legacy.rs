@@ -35,9 +35,17 @@ pub(super) fn handler(tf: &mut TrapFrame) {
 			// void sbi_set_timer(uint64_t stime_value)
 			let stime_value = tf.a0 as u64;
 			clint::set_timer(stime_value);
-			unsafe {
-				mie::set_mtimer();
-				mip::clear_stimer();
+			if mip::read().mtimer() {
+				unsafe {
+					mip::set_stimer();
+					mie::clear_mtimer();
+				}
+			}
+			else {
+				unsafe {
+					mip::clear_stimer();
+					mie::set_mtimer();
+				}
 			}
 		}, 
 		EID_CONSOLE_PUTCHAR => {
