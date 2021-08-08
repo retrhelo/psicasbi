@@ -8,8 +8,7 @@ pub const CLK: u64 = 11_059_200;
 pub const CLK: u64 = 26_000_000;
 
 /// The entry of S-mode kernel
-// pub const KERNEL_ENTRY: usize = 0x8002_0000;
-pub const KERNEL_ENTRY: usize = 0x8020_0000;
+pub const KERNEL_ENTRY: usize = 0x8002_0000;
 
 pub const NCPU: usize = 2;
 

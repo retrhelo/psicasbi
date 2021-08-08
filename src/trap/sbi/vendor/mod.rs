@@ -3,7 +3,7 @@
 use super::{SbiRet, TrapFrame};
 use super::error::*;
 
-pub(super) fn handler(tf: &mut TrapFrame) ->SbiRet {
+pub(super) fn handler(tf: &TrapFrame) ->SbiRet {
 	let eid = tf.a7;
 
 	match eid {

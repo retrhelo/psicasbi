@@ -9,7 +9,7 @@ use crate::hal::clint;
 
 const SET_TIMER: i64 = 0;
 
-pub(super) fn handler(tf: &mut TrapFrame) ->SbiRet {
+pub(super) fn handler(tf: &TrapFrame) ->SbiRet {
 	let fid = tf.a6;
 
 	match fid {

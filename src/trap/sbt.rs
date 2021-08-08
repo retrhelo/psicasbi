@@ -17,7 +17,7 @@ use riscv::register::{
 };
 
 pub(super) fn translation(vaddr: usize, tf: &mut TrapFrame) ->bool {
-	let mut ins = unsafe {extract_inst(vaddr)};
+	let ins = unsafe {extract_inst(vaddr)};
 
 	if ins & 0xFE007FFF == 0x12000073 { // sfence.vma instruction
 		// There is no `sfence.vma` in 1.9.1 privileged spec; however there is a `sfence.vm`.
@@ -80,25 +80,25 @@ pub(super) fn translation(vaddr: usize, tf: &mut TrapFrame) ->bool {
 /// be a valid address. This turns quite important after Virtual Memory Mapping 
 /// is enabled. 
 unsafe fn extract_inst(vaddr: usize) ->u32 {
-	let mut ans: u32;
+	let low = get_vaddr_u16(vaddr) as u32;
+	let high = get_vaddr_u16(vaddr + 2) as u32;
 
-	asm!("
-		li {0}, (1 << 17)
-		csrrs {0}, mstatus, {0}
-		lw {1}, 0({2})
-		csrw mstatus, {0}
-	", out(reg) _, out(reg) ans, in(reg) vaddr);
-
-	ans
+	low | (high << 16)
 }
 
-unsafe fn write_back(vaddr: usize, ins: u32) {
-	asm!("
-		li {0}, (1 << 17)
-		csrrs {0}, mstatus, {0}
-		sw {1}, 0({2})
-		csrw mstatus, {0}
-	", out(reg) _, in(reg) ins, in(reg) vaddr);
+#[inline]
+unsafe fn get_vaddr_u16(vaddr: usize) ->u16 {
+	let mut ans: u16;
+	asm!(
+		"li {0}, (1 << 17)", 
+		"csrrs {0}, mstatus, {0}", 
+		"lhu {1}, 0({2})", 
+		"csrw mstatus, {0}", 
+		out(reg) _, 
+		out(reg) ans, 
+		in(reg) vaddr, 
+	);
+	ans
 }
 
 #[inline]

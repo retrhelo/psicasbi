@@ -7,7 +7,7 @@ mod xv6_k210;
 
 const XV6_K210: i64 = 0x0a00_0210;
 
-pub(super) fn handler(tf: &mut TrapFrame) ->SbiRet {
+pub(super) fn handler(tf: &TrapFrame) ->SbiRet {
 	let eid = tf.a7;
 
 	match eid {

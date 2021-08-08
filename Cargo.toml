@@ -14,10 +14,11 @@ k210-pac = "0.2.0"
 r0 = "1.0.0"
 
 [features]
-default = ["qemu"]
+default = ["k210"]
 qemu = []
-k210 = ["soft-extern"]
-soft-extern = []
+k210 = ["soft-extern", "old-spec"]
+soft-extern = []		# For platforms that don't have Supervisor Ext Interrupt
+old-spec = []			# For platforms that use an old Spec, which differs in ins and reg 
 
 [profile.dev]
 panic = "abort"

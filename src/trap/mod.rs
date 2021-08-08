@@ -276,7 +276,6 @@ extern "C" fn trap_handler(tf: &mut TrapFrame) {
 						// by a external interrupt
 						asm!("csrw stval, {0}", in(reg) 0x9);
 					}
-					println!("SBI hart {} stval {:016x}", mhartid::read(), stval::read());
 				}, 
 				#[cfg(not(feature = "soft-extern"))]
 				() => {
@@ -284,6 +283,19 @@ extern "C" fn trap_handler(tf: &mut TrapFrame) {
 				}, 
 			}
 		},
+		#[cfg(feature = "old-spec")]
+		Trap::Exception(Exception::IllegalInstruction) => {
+			let vaddr = mepc::read();
+
+			if sbt::translation(vaddr, tf) {}
+			else {
+				panic!(
+					"Illegal Instruction, mepc: {:016x?}\ntrap frame: {:x?}", 
+					vaddr, 
+					tf
+				);
+			}
+		}, 
 		_ => {
 			panic!(
 				"Unhandled exception! mcause: {:?}, mepc: {:016x?}, mtval: {:016x?}\ntrap frame: {:p}\n{:x?}",
@@ -292,7 +304,7 @@ extern "C" fn trap_handler(tf: &mut TrapFrame) {
 				mtval::read(),
 				&tf as *const _,
 				tf
-			)
+			);
 		}, 
 	}
 }
