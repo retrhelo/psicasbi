@@ -31,11 +31,11 @@ pub const SBI_SPEC_VER_MINOR: u32 = 3;
 // SBI implemenation version, directly from cargo
 use lazy_static::*;
 lazy_static! {
-    pub static ref SBI_IMPL_VER_MAJOR: u32 = env!("CARGO_PKG_VERSION_MAJOR").parse().unwrap();
-    pub static ref SBI_IMPL_VER_MINOR: u32 = env!("CARGO_PKG_VERSION_MINOR").parse().unwrap();
+	pub static ref SBI_IMPL_VER_MAJOR: u32 = env!("CARGO_PKG_VERSION_MAJOR").parse().unwrap();
+	pub static ref SBI_IMPL_VER_MINOR: u32 = env!("CARGO_PKG_VERSION_MINOR").parse().unwrap();
 }
 
-pub const SBI_IMPL_ID: u64 = 0;       // no valid implementation id for now
+pub const SBI_IMPL_ID: u64 = 0x0909;
 pub const LOGO: &'static str = "
 ________   ________   ___   ________   ________   ________   ________   ___     
 |\\   __  \\ |\\   ____\\ |\\  \\ |\\   ____\\ |\\   __  \\ |\\   ____\\ |\\   __  \\ |\\  \\    
@@ -43,6 +43,6 @@ ________   ________   ___   ________   ________   ________   ________   ___
  \\ \\   ____\\\\ \\_____  \\\\ \\  \\\\ \\  \\     \\ \\   __  \\\\ \\_____  \\\\ \\   __  \\\\ \\  \\  
   \\ \\  \\___| \\|____|\\  \\\\ \\  \\\\ \\  \\____ \\ \\  \\ \\  \\\\|____|\\  \\\\ \\  \\|\\  \\\\ \\  \\ 
    \\ \\__\\      ____\\_\\  \\\\ \\__\\\\ \\_______\\\\ \\__\\ \\__\\ ____\\_\\  \\\\ \\_______\\\\ \\__\\
-    \\|__|     |\\_________\\\\|__| \\|_______| \\|__|\\|__||\\_________\\\\|_______| \\|__|
-              \\|_________|                           \\|_________|
+	\\|__|     |\\_________\\\\|__| \\|_______| \\|__|\\|__||\\_________\\\\|_______| \\|__|
+			  \\|_________|                           \\|_________|
 ";
