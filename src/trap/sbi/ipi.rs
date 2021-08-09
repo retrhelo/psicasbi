@@ -29,7 +29,7 @@ pub(super) fn handler(tf: &TrapFrame) ->SbiRet {
 					for i in 0..max_shift {
 						let hart = 1usize << i;
 						if 0 != (hart_mask & hart) {
-							clint::send_ipi(hart);
+							clint::send_ipi(i);
 						}
 					}
 					SbiRet(SUCCESS, 0)

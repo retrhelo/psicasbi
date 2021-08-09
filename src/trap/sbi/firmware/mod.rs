@@ -5,13 +5,13 @@ use super::error::*;
 
 mod xv6_k210;
 
-const XV6_K210: i64 = 0x0a00_0210;
+const XV6_EID: i64 = 0x0a00_0210;
 
 pub(super) fn handler(tf: &TrapFrame) ->SbiRet {
 	let eid = tf.a7;
 
 	match eid {
-		XV6_K210 => {
+		XV6_EID => {
 			xv6_k210::handler(tf)
 		}, 
 		_ => {
@@ -22,5 +22,5 @@ pub(super) fn handler(tf: &TrapFrame) ->SbiRet {
 
 #[inline]
 pub(super) fn has_extension(ext: i64) ->bool {
-	XV6_K210 == ext
+	XV6_EID == ext
 }
