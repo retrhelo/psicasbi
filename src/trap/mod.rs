@@ -272,9 +272,6 @@ extern "C" fn trap_handler(tf: &mut TrapFrame) {
 
 						// set S-mode software interrupt 
 						mip::set_ssoft();
-						// set stval to specify that the software interrupt is raised 
-						// by a external interrupt
-						asm!("csrw stval, {0}", in(reg) 0x9);
 					}
 				}, 
 				#[cfg(not(feature = "soft-extern"))]

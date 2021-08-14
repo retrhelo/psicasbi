@@ -8,6 +8,7 @@ use riscv::register::mie;
 use crate::hal::{uart, clint};
 
 const SET_EXT: i64 = 0;
+const IS_EXT: i64 = 1;
 const CONSOLE_PUTS: i64 = 0x10;
 const GET_TIMER: i64 = 0x20;
 
@@ -23,6 +24,17 @@ pub(super) fn handler(tf: &TrapFrame) ->SbiRet {
 			}
 
 			SbiRet(SUCCESS, 0)
+		}, 
+		IS_EXT => {
+			// struct sbiret sbi_xv6_is_ext();
+			// as what we do, when there's an external interrupt, 
+			// mie::mext is clear to avoid multiple interrupts
+			if mie::read().mext() {
+				SbiRet(SUCCESS, 0)
+			}
+			else {
+				SbiRet(SUCCESS, 1)
+			}
 		}, 
 		CONSOLE_PUTS => {
 			// struct sbiret sbi_xv6_puts(char *str, int n);
